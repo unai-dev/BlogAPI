@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using BlogAPI.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogAPI.Data
@@ -14,6 +15,8 @@ namespace BlogAPI.Data
         {
             base.OnModelCreating(builder);
         }
+
+        public DbSet<Post> Posts { get; set; }
 
 
     }
