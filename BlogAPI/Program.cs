@@ -1,0 +1,65 @@
+using BlogAPI.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+/**
+ * ========================================================================
+ * ========================================================================
+ *                              SERVICES AREA
+ * ========================================================================
+ * ========================================================================
+ */
+
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddControllers();
+builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer("name=DefaultConnection"));
+
+/**
+ * ========================================================================
+ * ========================================================================
+ *                              AUTH & AUTORIZE CONFIG
+ * ========================================================================
+ * ========================================================================
+ */
+
+builder.Services.AddIdentityCore<IdentityUser>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+builder.Services.AddScoped<UserManager<IdentityUser>>();
+builder.Services.AddScoped<SignInManager<IdentityUser>>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAuthentication().AddJwtBearer(o =>
+{
+    o.MapInboundClaims = false;
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateAudience = false,
+        ValidateIssuer = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["keyjwt"]!)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+
+
+
+/**
+ * ========================================================================
+ * ========================================================================
+ *                              MIDDLEWARERS AREA
+ * ========================================================================
+ * ========================================================================
+ */
+
+var app = builder.Build();
+
+app.MapControllers();
+app.Run();
