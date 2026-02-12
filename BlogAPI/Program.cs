@@ -50,6 +50,11 @@ builder.Services.AddAuthentication().AddJwtBearer(o =>
     };
 });
 
+builder.Services.AddAuthorization(o =>
+{
+    o.AddPolicy("admin", p => p.RequireClaim("admin"));
+});
+
 
 
 

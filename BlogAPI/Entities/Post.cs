@@ -8,7 +8,7 @@ namespace BlogAPI.Entities
         public Guid Id { get; set; }
 
         [Required]
-        [MinLength(30)]
+        [MinLength(10)]
         [MaxLength(450)]
         public required string Title { get; set; }
         public required string UserId { get; set; }

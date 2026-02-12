@@ -1,9 +1,9 @@
-﻿using BlogAPI.DTOs.UserAuth;
+﻿using BlogAPI.DTOs.Claims;
+using BlogAPI.DTOs.UserAuth;
 using BlogAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,7 +13,6 @@ namespace BlogAPI.Controllers
 {
     [ApiController]
     [Route("api/users")]
-    [Authorize]
     public class UserController: ControllerBase
     {
         private readonly UserManager<IdentityUser> userManager;
@@ -31,7 +30,6 @@ namespace BlogAPI.Controllers
         }
 
         [HttpPost("register")]
-        [AllowAnonymous]
         public async Task<ActionResult<AuthResponseDTO>> Register(UserCredentialsDTO userCredentialsDTO)
         {
             var user = new IdentityUser
@@ -62,7 +60,6 @@ namespace BlogAPI.Controllers
         }
 
         [HttpPost("login")]
-        [AllowAnonymous]
         public async Task<ActionResult<AuthResponseDTO>> Login(UserCredentialsDTO userCredentialsDTO)
         {
             var user = await userManager.FindByEmailAsync(userCredentialsDTO.Email);
@@ -81,6 +78,7 @@ namespace BlogAPI.Controllers
         }
 
         [HttpGet("realod")]
+        [Authorize]
         public async Task<ActionResult<AuthResponseDTO>> ReloadToken()
         {
             var user = await userService.GetUser();
@@ -93,7 +91,7 @@ namespace BlogAPI.Controllers
         }
 
         [HttpGet("me")]
-       
+        [Authorize(Policy = "admin")]
         public async Task<ActionResult> GetMyId()
         {
             var user = await userService.GetUser();
@@ -101,6 +99,28 @@ namespace BlogAPI.Controllers
             if (user is null) return Unauthorized();
 
             return Ok(new {user.Id});
+        }
+
+        [HttpPost("add-admin")]
+        [Authorize(Policy ="admin")]
+        public async Task<ActionResult> AddAdmin(EditClaimDTO editClaimDTO)
+        {
+            var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
+            if (user is null) return NotFound();
+
+            await userManager.AddClaimAsync(user, new Claim("admin", "true"));
+            return NoContent();
+        }
+
+        [HttpPost("remove-admin")]
+        [Authorize(Policy = "admin")]
+        public async Task<ActionResult> RemoveAdmin(EditClaimDTO editClaimDTO)
+        {
+            var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
+            if (user is null) return NotFound();
+
+            await userManager.RemoveClaimAsync(user, new Claim("admin", "true"));
+            return NoContent();
         }
 
         private ActionResult ReturnIncorrectLogin()

@@ -11,7 +11,7 @@ namespace BlogAPI.Controllers
 {
     [ApiController]
     [Route("v1/api/users/{userId}/posts")]
-    [Authorize]
+    [Authorize(Policy = "admin")]
     public class PostController : ControllerBase
     {
         private readonly ApplicationDbContext context;
