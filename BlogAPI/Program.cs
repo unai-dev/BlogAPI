@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
  * ========================================================================
  * ========================================================================
  */
-
+builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer("name=DefaultConnection"));
@@ -63,5 +63,12 @@ builder.Services.AddAuthentication().AddJwtBearer(o =>
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwaggerUI();
+    app.UseSwagger();
+}
+
 app.MapControllers();
 app.Run();
+    

@@ -1,4 +1,5 @@
 ﻿using BlogAPI.DTOs.UserAuth;
+using BlogAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +19,15 @@ namespace BlogAPI.Controllers
         private readonly UserManager<IdentityUser> userManager;
         private readonly IConfiguration configuration;
         private readonly SignInManager<IdentityUser> signInManager;
+        private readonly IUserService userService;
 
-        public UserController(UserManager<IdentityUser> userManager, IConfiguration configuration, SignInManager<IdentityUser> signInManager)
+        public UserController(UserManager<IdentityUser> userManager, 
+            IConfiguration configuration, SignInManager<IdentityUser> signInManager, IUserService userService)
         {
             this.userManager = userManager;
             this.configuration = configuration;
             this.signInManager = signInManager;
+            this.userService = userService;
         }
 
         [HttpPost("register")]
@@ -68,12 +72,35 @@ namespace BlogAPI.Controllers
                 return ReturnIncorrectLogin();
             }
 
-            var result = await signInManager.CheckPasswordSignInAsync(user, userCredentialsDTO.Password, lockoutOnFailure: false);
+            var result = await signInManager.CheckPasswordSignInAsync(user, userCredentialsDTO.Password!, lockoutOnFailure: false);
 
             if (result.Succeeded) return await BuildToken(userCredentialsDTO);
             else return ReturnIncorrectLogin();
 
 
+        }
+
+        [HttpGet("realod")]
+        public async Task<ActionResult<AuthResponseDTO>> ReloadToken()
+        {
+            var user = await userService.GetUser();
+
+            if (user is null) return NotFound();
+
+            var userCredentialsDTO = new UserCredentialsDTO { Email = user.Email! };
+            var response = await BuildToken(userCredentialsDTO);
+            return response;
+        }
+
+        [HttpGet("me")]
+       
+        public async Task<ActionResult> GetMyId()
+        {
+            var user = await userService.GetUser();
+
+            if (user is null) return Unauthorized();
+
+            return Ok(new {user.Id});
         }
 
         private ActionResult ReturnIncorrectLogin()
@@ -99,7 +126,7 @@ namespace BlogAPI.Controllers
             var expires = DateTime.UtcNow.AddYears(1);
 
             var tokenSecurity = new JwtSecurityToken(
-                issuer: null, audience: null, expires: expires, signingCredentials: credentials);
+                issuer: null, audience: null, expires: expires, signingCredentials: credentials, claims: claims);
 
             var token = new JwtSecurityTokenHandler().WriteToken(tokenSecurity);
 
