@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace BlogAPI.Controllers
 {
     [ApiController]
-    [Route("v1/api/users/{userId}/posts")]
-    [Authorize(Policy = "admin")]
+    [Route("v1/api/posts")]
+    [Authorize]
     public class PostController : ControllerBase
     {
         private readonly ApplicationDbContext context;
@@ -26,20 +26,19 @@ namespace BlogAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<PostDTO>> Get(string userId)
+        [AllowAnonymous]
+        public async Task<IEnumerable<PostDTO>> Get()
         {
-            var posts = await context.Posts
-                .Include(u => u.User)
-                .Where(x => x.UserId == userId)
-                .ToListAsync();
+            var posts = await context.Posts.AsNoTracking().ToListAsync();
             var mapPosts = mapper.Map<IEnumerable<PostDTO>>(posts);
             return mapPosts;
         }
 
         [HttpGet("{id}", Name ="GetPost")]
-        public async Task<ActionResult<PostDTO>> Get(Guid id, string userId)
+        public async Task<ActionResult<PostDTO>> Get(Guid id)
         {
-            var post = await context.Posts.Include(u => u.User).Where(x => x.UserId == userId).FirstOrDefaultAsync(x => x.Id == id);
+            var post = await context.Posts.Include(u => u.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (post is null) return NotFound();
 
@@ -47,34 +46,33 @@ namespace BlogAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post(string userId, AddPostDTO addPostDTO)
+        public async Task<ActionResult> Post(AddPostDTO addPostDTO)
         {
 
             var user = await userService.GetUser();
 
-            if (user is null) return NotFound();
-
-            if (user.Id != userId) return Forbid();
+            if (user is null) return Unauthorized();
 
             var post = mapper.Map<Post>(addPostDTO);
-            post.UserId = userId;
+
+            post.UserId = user.Id;
             context.Add(post);
             await context.SaveChangesAsync();
 
             var postCreated = mapper.Map<PostDTO>(post);
-            return CreatedAtRoute("GetPost", new { id = post.Id, userId = post.UserId }, postCreated);
+            return CreatedAtRoute("GetPost", new { id = post.Id}, postCreated);
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(string userId, Guid id)
+        public async Task<ActionResult> Delete(Guid id)
         {
             var user = await userService.GetUser();
 
             if (user is null) return NotFound();
 
-            if (user.Id != userId) return Forbid();
+            if (user.Id != user.Id) return Forbid();
 
-            var post = await context.Posts.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
+            var post = await context.Posts.FirstOrDefaultAsync(x => x.Id == id && x.UserId == user.Id);
 
             if (post is null) return NotFound();
 

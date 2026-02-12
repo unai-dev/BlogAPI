@@ -6,7 +6,6 @@ namespace BlogAPI.DTOs.Post
     {
         public Guid Id { get; set; }
         public required string Title { get; set; }
-        public required string UserId { get; set; }
         public required string UserEmail { get; set; }
     }
 }
