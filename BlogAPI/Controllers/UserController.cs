@@ -1,9 +1,13 @@
-﻿using BlogAPI.DTOs.Claims;
+﻿using AutoMapper;
+using BlogAPI.Data;
+using BlogAPI.DTOs.Claims;
+using BlogAPI.DTOs.User;
 using BlogAPI.DTOs.UserAuth;
 using BlogAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,21 +16,47 @@ using System.Text;
 namespace BlogAPI.Controllers
 {
     [ApiController]
-    [Route("api/users")]
+    [Route("v1/api/users")]
     public class UserController: ControllerBase
     {
         private readonly UserManager<IdentityUser> userManager;
         private readonly IConfiguration configuration;
         private readonly SignInManager<IdentityUser> signInManager;
         private readonly IUserService userService;
+        private readonly ApplicationDbContext context;
+        private readonly IMapper mapper;
 
         public UserController(UserManager<IdentityUser> userManager, 
-            IConfiguration configuration, SignInManager<IdentityUser> signInManager, IUserService userService)
+            IConfiguration configuration, SignInManager<IdentityUser> signInManager,
+            IUserService userService, ApplicationDbContext context, IMapper mapper)
         {
             this.userManager = userManager;
             this.configuration = configuration;
             this.signInManager = signInManager;
             this.userService = userService;
+            this.context = context;
+            this.mapper = mapper;
+        }
+
+        [HttpGet]
+        [Authorize(Policy ="admin")]
+        public async Task<IEnumerable<UserDTO>> Get()
+        {
+            var users = await context.Users.ToListAsync();
+            var usersDTO = mapper.Map<IEnumerable<UserDTO>>(users);
+            return usersDTO;
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Policy ="admin")]
+        public async Task<ActionResult<UserDTO>> Get(string id)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (user is null) return NotFound();
+
+            var userDTO = mapper.Map<UserDTO>(user);
+            return userDTO;
         }
 
         [HttpPost("register")]
@@ -38,7 +68,7 @@ namespace BlogAPI.Controllers
                 Email = userCredentialsDTO.Email
             };
 
-            var result = await userManager.CreateAsync(user, userCredentialsDTO.Password);
+            var result = await userManager.CreateAsync(user, userCredentialsDTO.Password!);
 
             if (result.Succeeded)
             {
@@ -77,7 +107,7 @@ namespace BlogAPI.Controllers
 
         }
 
-        [HttpGet("realod")]
+        [HttpGet("reload")]
         [Authorize]
         public async Task<ActionResult<AuthResponseDTO>> ReloadToken()
         {
