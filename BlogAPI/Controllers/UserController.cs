@@ -3,6 +3,7 @@ using BlogAPI.Data;
 using BlogAPI.DTOs.Claims;
 using BlogAPI.DTOs.User;
 using BlogAPI.DTOs.UserAuth;
+using BlogAPI.Entities;
 using BlogAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,22 +20,20 @@ namespace BlogAPI.Controllers
     [Route("v1/api/users")]
     public class UserController: ControllerBase
     {
-        private readonly UserManager<IdentityUser> userManager;
+        private readonly UserManager<User> userManager;
         private readonly IConfiguration configuration;
-        private readonly SignInManager<IdentityUser> signInManager;
+        private readonly SignInManager<User> signInManager;
         private readonly IUserService userService;
-        private readonly ApplicationDbContext context;
         private readonly IMapper mapper;
 
-        public UserController(UserManager<IdentityUser> userManager, 
-            IConfiguration configuration, SignInManager<IdentityUser> signInManager,
-            IUserService userService, ApplicationDbContext context, IMapper mapper)
+        public UserController(UserManager<User> userManager, 
+            IConfiguration configuration, SignInManager<User> signInManager,
+            IUserService userService, IMapper mapper)
         {
             this.userManager = userManager;
             this.configuration = configuration;
             this.signInManager = signInManager;
             this.userService = userService;
-            this.context = context;
             this.mapper = mapper;
         }
 
@@ -42,27 +41,26 @@ namespace BlogAPI.Controllers
         [Authorize(Policy ="admin")]
         public async Task<IEnumerable<UserDTO>> Get()
         {
-            var users = await context.Users.ToListAsync();
+            var users = await userManager.Users.Include(p => p.Posts).ToListAsync();
             var usersDTO = mapper.Map<IEnumerable<UserDTO>>(users);
             return usersDTO;
         }
 
-        [HttpGet("{id}")]
-        [Authorize(Policy ="admin")]
-        public async Task<ActionResult<UserDTO>> Get(string id)
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<UserDTO>> GetInfoUser()
         {
-            var user = await context.Users.FirstOrDefaultAsync(x => x.Id == id);
+            var user = await userService.GetUser();
 
             if (user is null) return NotFound();
 
-            var userDTO = mapper.Map<UserDTO>(user);
-            return userDTO;
+            return Ok(mapper.Map<UserDTO>(user));
         }
 
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponseDTO>> Register(UserCredentialsDTO userCredentialsDTO)
         {
-            var user = new IdentityUser
+            var user = new User
             {
                 UserName = userCredentialsDTO.Email,
                 Email = userCredentialsDTO.Email
@@ -74,7 +72,7 @@ namespace BlogAPI.Controllers
             {
 
                 var authResponse = await BuildToken(userCredentialsDTO);
-                return authResponse ;
+                return authResponse;
 
             } else
             {
@@ -118,17 +116,6 @@ namespace BlogAPI.Controllers
             var userCredentialsDTO = new UserCredentialsDTO { Email = user.Email! };
             var response = await BuildToken(userCredentialsDTO);
             return response;
-        }
-
-        [HttpGet("me")]
-        [Authorize(Policy = "admin")]
-        public async Task<ActionResult> GetMyId()
-        {
-            var user = await userService.GetUser();
-
-            if (user is null) return Unauthorized();
-
-            return Ok(new {user.Id});
         }
 
         [HttpPost("add-admin")]

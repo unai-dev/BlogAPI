@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BlogAPI.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace BlogAPI.Services
 {
     public interface IUserService
     {
-        Task<IdentityUser?> GetUser();
+        Task<User?> GetUser();
     }
 }

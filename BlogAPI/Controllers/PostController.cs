@@ -29,7 +29,7 @@ namespace BlogAPI.Controllers
         [AllowAnonymous]
         public async Task<IEnumerable<PostDTO>> Get()
         {
-            var posts = await context.Posts.AsNoTracking().ToListAsync();
+            var posts = await context.Posts.Include(u => u.User).AsNoTracking().ToListAsync();
             var mapPosts = mapper.Map<IEnumerable<PostDTO>>(posts);
             return mapPosts;
         }
@@ -42,7 +42,7 @@ namespace BlogAPI.Controllers
 
             if (post is null) return NotFound();
 
-            return mapper.Map<PostDTO>(post);
+            return Ok(mapper.Map<PostDTO>(post));
         }
 
         [HttpPost]
@@ -69,8 +69,6 @@ namespace BlogAPI.Controllers
             var user = await userService.GetUser();
 
             if (user is null) return NotFound();
-
-            if (user.Id != user.Id) return Forbid();
 
             var post = await context.Posts.FirstOrDefaultAsync(x => x.Id == id && x.UserId == user.Id);
 

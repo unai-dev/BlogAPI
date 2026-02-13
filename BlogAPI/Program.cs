@@ -1,4 +1,5 @@
 using BlogAPI.Data;
+using BlogAPI.Entities;
 using BlogAPI.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -27,11 +28,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer("name=De
  * ========================================================================
  */
 
-builder.Services.AddIdentityCore<IdentityUser>()
+builder.Services.AddIdentityCore<User>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
-builder.Services.AddScoped<UserManager<IdentityUser>>();
-builder.Services.AddScoped<SignInManager<IdentityUser>>();
+builder.Services.AddScoped<UserManager<User>>();
+builder.Services.AddScoped<SignInManager<User>>();
 builder.Services.AddTransient<IUserService, UserService>();
 
 builder.Services.AddHttpContextAccessor();
