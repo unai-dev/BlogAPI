@@ -105,6 +105,20 @@ namespace BlogAPI.Controllers
 
         }
 
+        [HttpPut]
+        [Authorize]
+        public async Task<ActionResult> Put(UpdateUserDTO updateUserDTO)
+        {
+            var user = await userService.GetUser();
+
+            if (user is null) return NotFound();
+
+            user.Birthdate = updateUserDTO.Birthdate;
+
+            await userManager.UpdateAsync(user);
+            return NoContent();
+        }
+
         [HttpGet("reload")]
         [Authorize]
         public async Task<ActionResult<AuthResponseDTO>> ReloadToken()

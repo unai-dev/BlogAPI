@@ -63,6 +63,22 @@ namespace BlogAPI.Controllers
             return CreatedAtRoute("GetPost", new { id = post.Id}, postCreated);
         }
 
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Put(Guid id, AddPostDTO postDTO)
+        {
+            var postDB = await context.Posts.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (postDB is null) return NotFound();
+
+            var post = mapper.Map<Post>(postDTO);
+            post.Id = id;
+
+            context.Update(post);
+            await context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
