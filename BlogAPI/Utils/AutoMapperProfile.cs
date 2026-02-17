@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BlogAPI.DTOs.Coment;
 using BlogAPI.DTOs.Post;
 using BlogAPI.DTOs.User;
 using BlogAPI.Entities;
@@ -13,6 +14,9 @@ namespace BlogAPI.Utils
             CreateMap<AddPostDTO, Post>();
 
             CreateMap<User, UserDTO>();
+
+            CreateMap<Coment, ComentDTO>();
+            CreateMap<AddComentDTO, Coment>();
         }
     }
 }

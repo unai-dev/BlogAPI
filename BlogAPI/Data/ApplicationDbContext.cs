@@ -17,6 +17,7 @@ namespace BlogAPI.Data
         }
 
         public DbSet<Post> Posts { get; set; }
+        public DbSet<Coment> Coments { get; set; }
 
 
     }
