@@ -15,6 +15,15 @@ var builder = WebApplication.CreateBuilder(args);
  * ========================================================================
  * ========================================================================
  */
+
+var allowedURLS = builder.Configuration.GetSection("AllowedURLS").Get<string[]>();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(cors =>
+    {
+        cors.WithOrigins(allowedURLS!).AllowAnyMethod().AllowAnyHeader();
+    });
+});
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddControllers();
@@ -74,7 +83,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.UseSwagger();
 }
-
+app.UseCors();
 app.MapControllers();
 app.Run();
     

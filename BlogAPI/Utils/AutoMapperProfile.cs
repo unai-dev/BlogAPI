@@ -15,7 +15,7 @@ namespace BlogAPI.Utils
 
             CreateMap<User, UserDTO>();
 
-            CreateMap<Coment, ComentDTO>();
+            CreateMap<Coment, ComentDTO>().ForMember(dto => dto.UserEmail, config => config.MapFrom(ent => ent.User!.Email));
             CreateMap<AddComentDTO, Coment>();
         }
     }
