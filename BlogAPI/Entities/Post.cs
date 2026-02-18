@@ -15,5 +15,6 @@ namespace BlogAPI.Entities
         public required string Title { get; set; }
         public required string UserId { get; set; }
         public User? User { get; set; }
+        public List<Coment> Coments { get; set; } = [];
     }
 }

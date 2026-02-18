@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlogAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260218073741_ComentsTable")]
-    partial class ComentsTable
+    [Migration("20260218174537_FixCascade")]
+    partial class FixCascade
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -278,15 +278,15 @@ namespace BlogAPI.Migrations
             modelBuilder.Entity("BlogAPI.Entities.Coment", b =>
                 {
                     b.HasOne("BlogAPI.Entities.Post", "Post")
-                        .WithMany()
+                        .WithMany("Coments")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BlogAPI.Entities.User", "User")
-                        .WithMany()
+                        .WithMany("Coments")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Post");
@@ -356,8 +356,15 @@ namespace BlogAPI.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BlogAPI.Entities.Post", b =>
+                {
+                    b.Navigation("Coments");
+                });
+
             modelBuilder.Entity("BlogAPI.Entities.User", b =>
                 {
+                    b.Navigation("Coments");
+
                     b.Navigation("Posts");
                 });
 #pragma warning restore 612, 618

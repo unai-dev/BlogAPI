@@ -1,4 +1,5 @@
-﻿using BlogAPI.DTOs.Post;
+﻿using BlogAPI.DTOs.Coment;
+using BlogAPI.DTOs.Post;
 
 namespace BlogAPI.DTOs.User
 {
@@ -7,5 +8,6 @@ namespace BlogAPI.DTOs.User
         public required string Email { get; set; }
         public DateTime Birthdate { get; set; }
         public List<PostDTO> Posts { get; set; } = [];
+        public List<ComentDTO> Coments { get; set; } = [];
     }
 }
