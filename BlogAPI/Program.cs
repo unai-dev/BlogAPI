@@ -17,6 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
  */
 
 var allowedURLS = builder.Configuration.GetSection("AllowedURLS").Get<string[]>();
+
+builder.Services.AddDataProtection();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(cors =>

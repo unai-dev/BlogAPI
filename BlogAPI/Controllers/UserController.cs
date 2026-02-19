@@ -6,6 +6,7 @@ using BlogAPI.DTOs.UserAuth;
 using BlogAPI.Entities;
 using BlogAPI.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,27 +19,60 @@ namespace BlogAPI.Controllers
 {
     [ApiController]
     [Route("v1/api/users")]
-    public class UserController: ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly UserManager<User> userManager;
         private readonly IConfiguration configuration;
         private readonly SignInManager<User> signInManager;
         private readonly IUserService userService;
         private readonly IMapper mapper;
+        private readonly ITimeLimitedDataProtector protector;
 
-        public UserController(UserManager<User> userManager, 
+        public UserController(UserManager<User> userManager,
             IConfiguration configuration, SignInManager<User> signInManager,
-            IUserService userService, IMapper mapper)
+            IUserService userService, IMapper mapper, IDataProtectionProvider protectionProvider)
         {
             this.userManager = userManager;
             this.configuration = configuration;
             this.signInManager = signInManager;
             this.userService = userService;
             this.mapper = mapper;
+
+            protector = protectionProvider.CreateProtector("UserController").ToTimeLimitedDataProtector();
+        }
+
+        [HttpGet("get-token")]
+        public ActionResult GetToken()
+        {
+            var textPlane = Guid.NewGuid().ToString();
+            var token = protector.Protect(textPlane, TimeSpan.FromDays(2));
+            var url = Url.RouteUrl("GetTokenListUsers", new { token }, "https");
+
+            return Ok(url);
+        }
+
+
+        [HttpGet("{token}", Name = "GetTokenListUsers")]
+        [AllowAnonymous]
+        public async Task<ActionResult> GetTokenListUsers(string token)
+        {
+            try
+            {
+                protector.Unprotect(token);
+            }
+            catch
+            {
+                ModelState.AddModelError(nameof(token), "Token has expired");
+                return ValidationProblem();
+            }
+
+            var users = await userManager.Users.Include(p => p.Posts).ToListAsync();
+            var usersDTO = mapper.Map<IEnumerable<UserDTO>>(users);
+            return Ok(usersDTO);
         }
 
         [HttpGet]
-        [Authorize(Policy ="admin")]
+        [Authorize(Policy = "admin")]
         public async Task<IEnumerable<UserDTO>> Get()
         {
             var users = await userManager.Users.Include(p => p.Posts).ToListAsync();
@@ -74,7 +108,8 @@ namespace BlogAPI.Controllers
                 var authResponse = await BuildToken(userCredentialsDTO);
                 return authResponse;
 
-            } else
+            }
+            else
             {
                 foreach (var err in result.Errors)
                 {
@@ -133,7 +168,7 @@ namespace BlogAPI.Controllers
         }
 
         [HttpPost("add-admin")]
-        [Authorize(Policy ="admin")]
+        [Authorize(Policy = "admin")]
         public async Task<ActionResult> AddAdmin(EditClaimDTO editClaimDTO)
         {
             var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
