@@ -45,7 +45,7 @@ namespace BlogAPI.Controllers
                 return NotFound();
             }
 
-            var coment = await context.Coments.Include(p => p.Post)
+            var coment = await context.Coments.Include(u => u.User) 
                 .FirstOrDefaultAsync(x => x.Id == id);
             if (coment is null)
             {
@@ -77,7 +77,7 @@ namespace BlogAPI.Controllers
 
             var comentDTO = mapper.Map<ComentDTO>(coment);
 
-            return CreatedAtRoute("GetComent", new { id = coment.Id }, comentDTO);
+            return CreatedAtRoute("GetComent", new { id = coment.Id, postId = postId }, comentDTO);
 
 
         }
